@@ -1,3 +1,4 @@
+import sys
 from prompts import system_prompt
 import argparse
 import os
@@ -25,39 +26,52 @@ def main():
         types.Content(role="user", parts=[types.Part(text=args.user_prompt)])
     ]
 
-    client = genai.Client(api_key=api_key)
-    message = client.models.generate_content(
-        model = "gemini-2.5-flash",
-        contents = messages,
-        config=types.GenerateContentConfig(
-            tools=[available_functions],
-            system_instruction=system_prompt
-        )
-    )
-    if message.usage_metadata == None:
-        raise RuntimeError("Metadata empty!")
-
     function_results = []
-    if args.verbose == True:
-        print(f"User prompt: {args.user_prompt}")
-        print(f"Prompt tokens: {message.usage_metadata.prompt_token_count}")
-        print(f"Response tokens: {message.usage_metadata.candidates_token_count}")
-    print(f"{message.text}")
-    if message.function_calls != None:
-        for fun_call in message.function_calls:
-            print(f"Calling function: {fun_call.name}({fun_call.args})")
-            function_call_result = call_function(fun_call, fun_call.args)
-            if len(function_call_result.parts) == 0:
-                raise Exception ("Parts List Empty")
-            if function_call_result.parts[0].function_response == None:
-                raise Exception ("Parts first response is None")
-            if function_call_result.parts[0].function_response.response == None:
-                raise Exception ("Response field is None")
+    for _ in range(20):
+        client = genai.Client(api_key=api_key)
+        message = client.models.generate_content(
+            model = "gemini-2.5-flash",
+            contents = messages,
+            config=types.GenerateContentConfig(
+                tools=[available_functions],
+                system_instruction=system_prompt
+            )
+        )
+        if message.candidates != None:
+            for candidate in message.candidates:
+                messages.append(candidate.content)
+        if message.usage_metadata == None:
+            raise RuntimeError("Metadata empty!")
 
-            function_results.append(function_call_result.parts[0])
+        if args.verbose == True:
+            print(f"User prompt: {args.user_prompt}")
+            print(f"Prompt tokens: {message.usage_metadata.prompt_token_count}")
+            print(f"Response tokens: {message.usage_metadata.candidates_token_count}")
+        print(f"{message.text}")
+        if message.function_calls != None:
+            for fun_call in message.function_calls:
+                print(f"Calling function: {fun_call.name}({fun_call.args})")
+                function_call_result = call_function(fun_call, fun_call.args)
+                if len(function_call_result.parts) == 0:
+                    raise Exception ("Parts List Empty")
+                if function_call_result.parts[0].function_response == None:
+                    raise Exception ("Parts first response is None")
+                if function_call_result.parts[0].function_response.response == None:
+                    raise Exception ("Response field is None")
 
-    if args.verbose == True:
-        print(f"-> {function_call_result.parts[0].function_response.response}")
+                function_results.append(function_call_result.parts[0])
+                messages.append(types.Content(role="user", parts=function_results))
+        else:
+            print(message.text)
+            print("Got to return")
+            return
+
+
+        if args.verbose == True:
+            print(f"-> {function_call_result.parts[0].function_response.response}")
+
+    print("Max Loop reached non final response generated")
+    sys.exit(1)
 
 
 

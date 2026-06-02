@@ -19,10 +19,11 @@ def get_files_info(working_directory: str, directory: str = ".") -> str:
             dir_dict[item] = [str(os.path.getsize(target_dir + '/' + item)), str(os.path.isdir(target_dir + '/' + item))]
         result = ""
         result = "\n".join(list(map(lambda x: f"{x}: " + f"file_size={dir_dict[x][0]}, is_dir={dir_dict[x][1]}", dir_dict)))
+        print(f'Success: "{directory}" is within the working directory')
         print(result)
+        return result
 
             
-        return f'Success: "{directory}" is within the working directory'
     except Exception as e:
         print(f"Error: {e}")
 
