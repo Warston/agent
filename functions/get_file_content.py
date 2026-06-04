@@ -2,13 +2,16 @@ from google.genai import types
 
 import os
 from config import MAX_CHARS
-def get_file_content(working_directory: str, file_path: str) -> str:
+
+
+def get_file_content(working_directory: str, file_path: str) -> str | None:
     try:
         working_dir_abs = os.path.abspath(working_directory)
         target_dir = os.path.normpath(os.path.join(working_dir_abs, file_path))
 
-
-        valid_target_dir = os.path.commonpath([working_dir_abs, target_dir]) == working_dir_abs
+        valid_target_dir = (
+            os.path.commonpath([working_dir_abs, target_dir]) == working_dir_abs
+        )
         if not valid_target_dir:
             return f'Error: Cannot read "{file_path}" as it is outside the permitted working directory'
         if os.path.isdir(target_dir):
@@ -22,7 +25,7 @@ def get_file_content(working_directory: str, file_path: str) -> str:
         return content
     except Exception as e:
         print(f"Error: {e}")
-    
+
 
 schema_get_file_content = types.FunctionDeclaration(
     name="get_file_content",

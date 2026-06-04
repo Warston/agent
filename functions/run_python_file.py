@@ -3,16 +3,18 @@ from google.genai import types
 import subprocess
 import os
 
+
 def run_python_file(
     working_directory: str, file_path: str, args: list[str] | None = None
-) -> str:
+) -> str | None:
 
     try:
         working_dir_abs = os.path.abspath(working_directory)
         target_dir = os.path.normpath(os.path.join(working_dir_abs, file_path))
 
-
-        valid_target_dir = os.path.commonpath([working_dir_abs, target_dir]) == working_dir_abs
+        valid_target_dir = (
+            os.path.commonpath([working_dir_abs, target_dir]) == working_dir_abs
+        )
         if not valid_target_dir:
             return f'Error: Cannot execute "{file_path}" as it is outside the permitted working directory'
 
@@ -23,7 +25,7 @@ def run_python_file(
             return f'Error: "{file_path}" is not a Python file'
 
         command = ["python", target_dir]
-        if args != None:
+        if args is not None:
             command.extend(args)
 
         completed = subprocess.run(command, capture_output=True, text=True, timeout=30)
@@ -32,7 +34,7 @@ def run_python_file(
 
         if completed.returncode != 0:
             output += f"Process exited with code {completed.returncode} "
-        if completed.stdout != None:
+        if completed.stdout is not None:
             output += f"STDOUT: {completed.stdout}"
         if completed.stderr != "":
             output += f"STDERR: {completed.stderr}"
@@ -47,7 +49,7 @@ def run_python_file(
 
 schema_run_python_file = types.FunctionDeclaration(
     name="run_python_file",
-    description=f"Runs specified python file.",
+    description="Runs specified python file.",
     parameters=types.Schema(
         type=types.Type.OBJECT,
         properties={
@@ -57,13 +59,10 @@ schema_run_python_file = types.FunctionDeclaration(
             ),
             "args": types.Schema(
                 type=types.Type.ARRAY,
-                    items=types.Schema(
-                        type=types.Type.STRING,
-                        description="Argument passed to function"
-                    ),
+                items=types.Schema(
+                    type=types.Type.STRING, description="Argument passed to function"
+                ),
             ),
         },
     ),
 )
-
-
